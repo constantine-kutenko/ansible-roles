@@ -1,0 +1,42 @@
+---
+
+- hosts: "{{ environment }}"
+  become: true
+  pre_tasks:
+    - name: Check if server is running
+      command: rndc status
+      ignore_errors: true
+      register: rndc_status
+      tags:
+        - always
+    - name: Freeze dynamic updates
+      command: rndc freeze
+      ignore_errors: true
+      when: rndc_status | succeeded
+      tags:
+        - always
+  roles:
+    - role: bind
+      tags:
+        - bind
+  tasks:
+    - name: Check bind configuration
+      command: "/usr/sbin/named-checkconf -z {{ bind_conf_file }}"
+      register: checkconf_output
+      tags:
+        - always
+    - debug: var=checkconf_output.stdout_lines
+      tags:
+        - always
+    - name: Start bind
+      systemd:
+        name: bind
+        state: started
+        enabled: true
+        daemon_reload: true
+      tags:
+        - always
+    - name: Unfreeze dynamic updates
+      command: rndc thaw
+      tags:
+        - always
