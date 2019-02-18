@@ -1,0 +1,10 @@
+#jinja2:lstrip_blocks: True
+{{ "Created by Ansible" | comment }}
+
+{% for key in keys %}
+key {{ key.name }} {
+  algorithm {{ key.algorithm }};
+  secret "{{ key.value }}";
+};
+
+{% endfor %}

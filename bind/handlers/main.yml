@@ -1,0 +1,6 @@
+---
+
+- name: restart bind
+  systemd:
+    name: bind
+    state: restarted

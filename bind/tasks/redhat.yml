@@ -1,0 +1,26 @@
+---
+
+- name: Install bind
+  package:
+    name: bind
+    state: latest
+
+- name: Create service file symlink
+  file:
+    src: /lib/systemd/system/named.service
+    dest: /lib/systemd/system/bind.service
+    state: link
+
+- name: Set OS dependant variables
+  set_fact:
+    bind_user: named
+    bind_group: named
+    bind_conf_dir: "/etc/named"
+    bind_conf_file: "/etc/named.conf"
+  tags:
+    - always
+
+- name: Disbale ipv6 for named
+  lineinfile:
+    path: /etc/sysconfig/named
+    line: 'OPTIONS="-4"'

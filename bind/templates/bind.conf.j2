@@ -1,0 +1,31 @@
+{{ "Created by Ansible" | comment }}
+
+options {
+  directory           "{{ bind_zones_dir }}";
+  allow-query         { any; };
+  recursion           {{ bind_default_recusion }};
+  notify              {{ bind_default_notify }};
+  pid-file            "/run/named/named.pid";
+  version             "Not supported";
+
+  response-policy { 
+    zone "rpz";
+  };
+};
+
+logging {
+  channel syslog {
+    syslog;
+   };
+  category default {
+    syslog;
+  };
+  category queries {
+    syslog;
+  };
+};
+
+include "{{ bind_conf_dir }}/rfc_1918.acl";
+include "{{ bind_conf_dir }}/zones.conf";
+include "{{ bind_conf_dir }}/geo.acl";
+include "{{ bind_conf_dir }}/keys.conf";

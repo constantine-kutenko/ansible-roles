@@ -1,0 +1,8 @@
+$TTL 3600
+@            IN    SOA  localhost. root.localhost.  (
+                          2015112509   ; serial
+                          1h           ; refresh
+                          30m          ; retry
+                          1w           ; expiry
+                          30m)         ; minimum
+                   IN     NS    localhost.

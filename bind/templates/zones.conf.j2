@@ -1,0 +1,92 @@
+#jinja2:lstrip_blocks: True
+{{ "Created by Ansible" | comment }}
+
+{% for view in views %}
+view "{{ view.name }}" {
+  {% if view.match_clients is defined %}
+  match-clients {
+    {% for client in view.match_clients %}
+    {{ client }};
+    {% endfor %}
+  };
+  {% endif %}
+  {% if view.match_destinations is defined %}
+  match-destinations {
+    {% for client in view.match_destinations %}
+    {{ client }};
+    {% endfor %}
+  };
+  {% endif %}
+  {% if view.recursion is defined %}
+  recursion {{ view.recursion }};
+  allow-recursion {
+    {% for host in view.allow_recursion|default(['any']) %}
+    {{ host }};
+    {% endfor %}
+  };
+  {% endif %}
+  {% if view.allow_transfer is defined %}
+  allow-transfer {
+    {% for host in view.allow_transfer %}
+    {{ host }};
+    {% endfor %}
+  };
+  {% endif %}
+  {% if view.notify is defined %}
+  notify {{ view.notify }};
+    {% if view.notify_source is defined %}
+  notify-source {{ view.notify_source }};
+    {% endif %}
+    {% if view.also_notify is defined %}
+    also-notify {
+      {% for host in view.also_notify %}
+      {{ host }};
+      {% endfor %}
+    };
+    {% endif %}
+  {% endif %}
+  {% if view.allow_update is defined %}
+  allow-update {
+    {% for host in view.allow_update %}
+    {{ host }};
+    {% endfor %}
+  };
+  {% endif %}
+    {% for zone in view.zones %}
+  zone "{{ zone.name }}." {
+    type {{ zone.type }};
+      {% if zone.type == 'master' %}
+    file "{{ zone.name }}_{{ view.name }}";
+        {% if zone.allow_transfer is defined %}
+    allow-transfer {
+          {% for host in zone.allow_transfer %}
+      {{ host }};
+          {% endfor %}
+    };
+        {% endif %}
+        {% if zone.allow_update is defined %}
+    allow-update {
+          {% for host in zone.allow_update %}
+      {{ host }};
+          {% endfor %}
+    };
+        {% endif %}
+      {% elif zone.type == 'slave' %}
+    masters {
+        {% for master in zone.masters %}
+      {{ master }};
+        {% endfor %}
+    };
+    file "{{ zone.name }}_{{ view.name }}";
+      {% elif zone.type == "forward" %}
+    forwarders {
+        {% for forwarder in zone.forwarders %}
+      {{ forwarder }};
+        {% endfor %}
+    };
+      {% endif %}
+  };
+    {% endfor %}
+};
+
+{% endfor %}

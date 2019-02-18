@@ -1,0 +1,106 @@
+---
+
+- include_tasks: "{{ ansible_os_family | lower() }}.yml"
+
+- name: Manage bind main configuration file
+  template:
+    src: bind.conf.j2
+    dest: "{{ bind_conf_file }}"
+    owner: "{{ bind_user }}"
+    group: "{{ bind_group }}"
+    mode: 0640
+    setype: named_conf_t
+    force: true
+  notify:
+   - restart bind
+  tags:
+    - config
+
+- name: Manage views configuration file
+  template:
+    src: zones.conf.j2
+    dest: "{{ bind_conf_dir }}/zones.conf"
+    owner: "{{ bind_user }}"
+    group: "{{ bind_group }}"
+    mode: 0640
+    setype: named_conf_t
+    force: true
+  notify:
+   - restart bind
+  tags:
+    - config
+    - zone_update
+
+- name: Manage keys configuration file
+  template:
+    src: keys.conf.j2
+    dest: "{{ bind_conf_dir }}/keys.conf"
+    owner: "{{ bind_user }}"
+    group: "{{ bind_group }}"
+    mode: 0640
+    setype: named_conf_t
+    force: true
+  notify:
+   - restart bind
+  tags:
+    - config
+
+- name: Place rfc_1918.acl
+  copy:
+    src: rfc_1918.acl
+    dest: "{{ bind_conf_dir }}"
+    owner: "{{ bind_user }}"
+    group: "{{ bind_group }}"
+    mode: 0644
+    setype: named_conf_t
+    force: true
+  tags:
+    - config
+
+- name: Take sure geo.acl exist
+  file:
+    dest: "{{ bind_conf_dir }}/geo.acl"
+    owner: "{{ bind_user }}"
+    group: "{{ bind_group }}"
+    mode: 0644
+    state: touch
+    setype: named_conf_t
+  tags:
+    - config
+
+- name: Create directory for zone files
+  file:
+    name: "{{ bind_zones_dir }}"
+    state: directory
+    owner: "{{ bind_user }}"
+    group: "{{ bind_group }}"
+    mode: 0755
+    force: true
+    setype: named_zone_t
+
+- name: Manage zones files
+  copy:
+    content: "{{ item.1.content }}"
+    dest: "{{ bind_zones_dir }}/{{ item.1.name }}_{{ item.0.name }}"
+    owner: "{{ bind_user }}"
+    group: "{{ bind_group }}"
+    mode: 0660
+    setype: named_zone_t
+    force: true
+  with_subelements:
+    - "{{ views }}"
+    - zones
+  notify:
+   - restart bind
+  when: item.1.type == 'master'
+  tags:
+    - config
+    - zone_update
+
+- name: Allow bind to create dynamic zone files
+  seboolean:
+    name: named_write_master_zones
+    state: yes
+    persistent: yes
+  notify:
+   - restart bind
