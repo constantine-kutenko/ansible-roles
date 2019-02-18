@@ -1,0 +1,8 @@
+---
+
+# Apply the tickstack-agent role to hosts
+- hosts: all
+  any_errors_fatal: true
+  become: yes
+  roles:
+    - role: tickstack-agent
