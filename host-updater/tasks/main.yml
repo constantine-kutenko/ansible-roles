@@ -1,0 +1,129 @@
+---
+
+- name: Install packages and dependecies for host-updater (CentOS, Ubuntu)
+  package:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - git
+    - curl
+    - "{% if ansible_os_family | lower() == 'debian' and ansible_distribution_version >= '9' %}python3-pip{% else %}python-pip{% endif %}"
+  tags: 
+    - host-updater
+
+- name: Install dependencies form PyPi repository
+  pip:
+    name: "{{ item }}"
+  with_items:
+    - requests
+  tags:
+    - host-updater
+
+- name: Install package 'slacknotifier' from a local repository
+  pip:
+    name: "slacknotifier"
+    extra_args: "--index {{ pypi_repo_url }}"
+    state: forcereinstall
+  register: output
+  changed_when: "output.changed == false"
+  tags:
+    - host-updater
+
+- name: Create directories for host-updater
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ item.group | default('root') }}"
+    mode: "{{ item.mode | default('0775') }}"
+  with_items:
+    - "{{ host_updater_home_dir }}"
+    - "{{ host_updater_home_dir }}/{{ host_updater_version }}"
+  tags:
+    - host-updater
+
+- name: Save deployment private key to a file
+  copy:
+    content: "{{ repo_ssh_key }}"
+    dest: "{{ host_updater_temp_dir }}/host-updater.key"
+    owner: root
+    group: root
+    mode: 0600
+  register: output
+  changed_when: "output.changed == false"
+  tags:
+    - host-updater
+
+- name: Check out a host-updater repository
+  git:
+    repo: "{{ host_updater_gitlab_repository }}"
+    dest: "{{ host_updater_home_dir }}/{{ host_updater_version }}"
+    version: "{{ host_updater_version }}"
+    key_file: "{{ host_updater_temp_dir }}/host-updater.key"
+    accept_hostkey: yes
+  tags:
+    - host-updater
+
+- name: Create a symlink for host-updater script
+  file:
+    src: "{{ host_updater_home_dir }}/{{ host_updater_version }}/updater.py"
+    dest: "{{ host_updater_home_dir }}/updater.py"
+    owner: root
+    group: root
+    state: link
+  tags:
+    - host-updater
+
+- name: Remove temporary project directory and deployment private key
+  file:
+    path: "{{ host_updater_temp_dir }}/host-updater.key"
+    state: absent
+  register: output
+  changed_when: "output.changed == false"
+  tags:
+    - host-updater
+
+- name: Copy systemd notifier script
+  template:
+    src: "templates/host-updater-notifier.sh.j2"
+    dest: "{{ host_updater_home_dir }}/host-updater-notifier.sh"
+    owner: root
+    group: root
+    mode: 0700
+  tags:
+    - host-updater
+
+- name: Copy systemd service, timer and notifier units for host-updater
+  template:
+    src: "templates/{{ item }}.j2"
+    dest: "/etc/systemd/system/{{ item }}"
+    owner: root
+    group: root
+    mode: 0600
+  with_items:
+    - host-updater.service
+    - host-updater.timer
+    - host-updater-notifier.service
+  tags:
+    - host-updater
+
+- name: Enable host-updater systemd services
+  systemd:
+    name: "{{ item }}"
+    masked: no
+    daemon-reload: yes
+  with_items:
+    - host-updater.service
+    - host-updater-notifier.service
+  tags:
+    - host-updater
+
+- name: Enable and start a systemd host-updater timer unit
+  systemd:
+    name: "host-updater.timer"
+    state: started
+    enabled: True
+    daemon-reload: yes
+  notify: restart_timer
+  tags:
+    - host-updater

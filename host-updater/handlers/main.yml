@@ -1,0 +1,6 @@
+---
+
+- name: restart_timer
+  systemd:
+    name: "host-updater.timer"
+    state: reloaded

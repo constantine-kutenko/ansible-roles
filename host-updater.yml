@@ -1,0 +1,10 @@
+---
+
+- hosts: localhost
+  become: yes
+  gather_facts: True
+  tags:
+    - host-updater
+
+  roles:
+    - role: host-updater

@@ -1,0 +1,10 @@
+---
+
+host_updater_version: "0.0.3"
+host_updater_start_schedule: "*-*-* 00:00"
+host_updater_home_dir: "/opt/host-updater"
+host_updater_gitlab_repository: "git@gitlab.example.com:devops/host-updater.git"
+host_updater_temp_dir: "/tmp"
+slack_webhook_url: "https://hooks.slack.com/services/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"
+pypi_repo_host: "nexus.example.com"
+pypi_repo_url: "https://{{ pypi_repo_host }}/repository/pypi/simple"

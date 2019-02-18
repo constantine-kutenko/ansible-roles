@@ -1,0 +1,3 @@
+[testing-containers]
+centos ansible_python_interpreter=/usr/bin/python
+debian ansible_python_interpreter=/usr/bin/python3

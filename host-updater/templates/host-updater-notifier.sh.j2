@@ -1,0 +1,6 @@
+{{ "Created by Ansible" | comment }}
+
+
+HOSTNAME=$(hostname) && \
+payload="{\"username\":\"Host-updater notification\", \"text\": \"ERROR\", \"attachments\":[{\"title\": \"${HOSTNAME}\",\"text\": \"Server: ${HOSTNAME}\nUpdating system cannot be performed due to an error.\nHost-updater service cannot start.\", \"color\": \"#ef0000\"}]}" && \
+curl -s -d "payload=$payload" "{{ slack_webhook_url }}"

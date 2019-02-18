@@ -1,0 +1,8 @@
+{{ "Created by Ansible" | comment }}
+
+[Unit]
+Description=Reports host-updater service and/or timer error to Slack
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/bash -c "{{ host_updater_home_dir }}/host-updater-notifier.sh"
