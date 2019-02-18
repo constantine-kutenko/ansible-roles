@@ -8,11 +8,11 @@
     gpgcheck: "yes"
     gpgkey: https://repos.influxdata.com/influxdb.key
   environment: "{{proxy_env}}"
-  tags: tickstack-agent-rhel
+  tags: tickstack-telegraf-rhel
 
 - name: Install telegraf package
   yum:
-    name: "telegraf-{{ telegraf_agent_version }}"
+    name: "telegraf-{{ telegraf_telegraf_version }}"
     state: installed
   notify: telegraf restart
-  tags: tickstack-agent-rhel
+  tags: tickstack-telegraf-rhel

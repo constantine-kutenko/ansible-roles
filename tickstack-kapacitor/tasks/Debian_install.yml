@@ -1,0 +1,35 @@
+---
+
+- name: Install packages and dependecies
+  apt:
+    name: {{ item }}
+    state: present
+    update_cache: yes
+  with_items:
+    - curl
+  environment: "{{proxy_env}}"
+  tags: tickstack-kapacitor
+
+- name: Download Kapacitor apt key
+  apt_key:
+    url: "https://repos.influxdata.com/influxdb.key"
+    state: present
+  environment: "{{proxy_env}}"
+  tags: tickstack-kapacitor
+
+- name: Add Kapacitor repository
+  apt_repository:
+    repo: "deb https://repos.influxdata.com/ubuntu xenial stable"
+    filename: "kapacitor"
+    state: present
+  environment: "{{proxy_env}}"
+  tags: tickstack-kapacitor
+
+- name: Install Kapacitor package
+  apt:
+    name: kapacitor
+    state: present
+    update_cache: "yes"
+    cache_valid_time: 3600
+  notify: kapacitor start
+  tags: tickstack-kapacitor

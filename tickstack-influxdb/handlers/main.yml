@@ -1,0 +1,20 @@
+---
+
+- name: influxdb restart
+  service:
+    name: influxdb
+    state: restarted
+  tags: tickstack-influxdb
+
+- name: influxdb stop
+  service:
+    name: influxdb
+    state: stopped
+  tags: tickstack-influxdb
+
+- name: influxdb start
+  service:
+    name: influxdb
+    state: started
+    enabled: yes
+  tags: tickstack-influxdb

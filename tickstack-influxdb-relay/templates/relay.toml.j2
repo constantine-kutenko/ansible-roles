@@ -1,0 +1,42 @@
+{{ ansible_managed }}
+
+[[http]]
+
+name = "http-traffic"
+
+# bind the http traffic to this interface
+bind-addr = "{{ influxdb_relay_http_bind_address }}:{{ influxdb_relay_http_bind_port }}"
+
+{% if influxdb_relay_ssl_certificate != "" %}
+# Enable HTTPS requests.
+ssl-combined-pem = "{{ influxdb_relay_ssl_certificate }}"
+{% endif %}
+
+output = [
+
+    {% for http_host in influxdb_relay_http_hosts %}
+    { name="{{ http_host.name }}", location="{{ http_host.location }}", timeout="{{ http_host.timeout|default('10s') }}", skip-tls-verification={{ http_host.skip_tls_verification|default('false')|lower }} },
+    {% endfor %}
+]
+
+{% if influxdb_relay_udp_enabled == True %}
+[[udp]]
+
+name = "udp-traffic"
+
+# bind the udp traffic to this interface
+bind-addr = "{{ influxdb_relay_udp_bind_address }}:{{ influxdb_relay_udp_port }}"
+
+# Socket buffer size for incoming connections.
+read-buffer = {{ influxdb_relay_udp_read_buffer }} # default
+
+# Precision to use for timestamps
+precision = "{{ influxdb_relay_udp_precision }}" # Can be n, u, ms, s, m, h
+
+output = [
+
+    {% for udp_host in influxdb_relay_udp_hosts %}
+    { name="{{ udp_host.name }}", location="{{ udp_host.location }}", mtu={{ udp_host.mtu }}  },
+    {% endfor %}
+]
+{% endif %}

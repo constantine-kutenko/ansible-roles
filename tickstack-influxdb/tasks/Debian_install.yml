@@ -1,0 +1,45 @@
+---
+
+- name: Install all necessary packages and dependecies
+  apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: "yes"
+  with_items:
+    - mc
+    - curl
+    - vim
+    - python-pip
+    - virtualenv
+  environment: "{{proxy_env}}"
+  tags: tickstack-influxdb
+
+- name: Install Python packages
+  pip:
+    name: influxdb
+  environment: "{{proxy_env}}"
+  tags: tickstack-influxdb
+
+- name: Download InfluxDB apt key
+  apt_key:
+    url: "https://repos.influxdata.com/influxdb.key"
+    state: present
+  environment: "{{proxy_env}}"
+  tags: tickstack-influxdb
+
+- name: Add InfluxDB repository
+  apt_repository:
+    repo: "deb https://repos.influxdata.com/ubuntu xenial stable"
+    filename: "influxdb"
+    state: present
+  environment: "{{proxy_env}}"
+  tags: tickstack-influxdb
+
+- name: Install InfluxDB package
+  apt:
+    name: influxdb
+    state: present
+    update_cache: "yes"
+    cache_valid_time: 3600
+  notify: influxdb start
+  tags: tickstack-influxdb

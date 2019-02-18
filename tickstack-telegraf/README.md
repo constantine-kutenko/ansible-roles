@@ -1,4 +1,4 @@
-# tickstack-agent
+# tickstack-telegraf
 
 ## Purpose
 
@@ -29,11 +29,11 @@ This role depends on tickstack-influxdb-relay role.
 Example on how to apply the role to a container of a host:
 
 ````yaml
-- hosts: tickstack-agent
+- hosts: all
   any_errors_fatal: true
   become: yes
   roles:
-    - role: tickstack-agent
+    - role: tickstack-telegraf
 ````
 
 License

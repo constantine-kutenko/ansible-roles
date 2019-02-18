@@ -1,0 +1,11 @@
+---
+
+- name: Copy configuration file
+  template:
+    src: "templates/kapacitor.conf.j2"
+    dest: "/etc/kapacitor/kapacitor.conf"
+    owner: root
+    group: root
+    mode: 0644
+  notify: kapacitor restart
+  tags: tickstack-kapacitor

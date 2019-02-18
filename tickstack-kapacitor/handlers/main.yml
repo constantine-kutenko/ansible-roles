@@ -1,0 +1,20 @@
+---
+
+- name: kapacitor restart
+  service:
+    name: kapacitor
+    state: restarted
+  tags: tickstack-kapacitor
+
+- name: kapacitor stop
+  service:
+    name: kapacitor
+    state: stopped
+  tags: tickstack-kapacitor
+
+- name: kapacitor start
+  service:
+    name: kapacitor
+    state: started
+    enabled: yes
+  tags: tickstack-kapacitor

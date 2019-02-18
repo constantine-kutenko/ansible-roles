@@ -1,0 +1,19 @@
+{{ ansible_managed }}
+
+# If you modify this, please also make sure to edit init.sh
+
+[Unit]
+Description=Open source monitoring and visualization UI for the entire TICK stack..
+Documentation="https://www.influxdata.com/time-series-platform/chronograf/"
+After=network-online.target
+
+[Service]
+User=chronograf
+Group=chronograf
+EnvironmentFile=-/etc/default/chronograf
+ExecStart=/usr/bin/chronograf --host {{ chronograf_bind_address }} --port {{ chronograf_bind_port }} -b /var/lib/chronograf/chronograf-v1.db -c /usr/share/chronograf/canned --influxdb-url=http://127.0.0.1:{{ influxdb_http_bind_port }} --influxdb-username={{ chronograf_influxdb_username }} --influxdb-password={{ chronograf_influxdb_password }} --kapacitor-url=http://localhost:9092 --kapacitor-username={{ kapacitor_influxdb_username }} --kapacitor-password={{ kapacitor_influxdb_password }}
+KillMode=control-group
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

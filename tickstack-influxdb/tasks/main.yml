@@ -1,0 +1,11 @@
+---
+
+# Install InfluxDB
+- name: Include the playbook that handles installation of InfluxDB package
+  include: "{{ ansible_os_family }}_install.yml"
+  tags: tickstack-influxdb
+
+# Configure InfluxDB
+- name: Include the playbook that handles configuration of InfluxDB service
+  include: "{{ ansible_os_family }}_configure.yml"
+  tags: tickstack-influxdb

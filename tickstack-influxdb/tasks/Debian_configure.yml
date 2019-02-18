@@ -1,0 +1,109 @@
+---
+
+- name: Make sure the service is started and running
+  service:
+    name: influxdb
+    state: started
+    enabled: "yes"
+  tags: tickstack-influxdb
+
+- name: Wait until InfluxDB is up and running
+  wait_for:
+    host: 0.0.0.0
+    port: 8086
+    delay: 5
+  tags: tickstack-influxdb
+
+- name: Get a list of existing users
+  uri:
+    url: 'http://localhost:8086/query?q=SHOW%20USERS'
+    force_basic_auth: true
+    user: "{{ influxdb_admin_username }}"
+    password: "{{ influxdb_admin_password }}"
+  register: influxdb_user_list_raw
+  changed_when: false
+  tags: tickstack-influxdb
+
+- name: Show existing users (RAW)
+  debug:
+    msg: "{{ influxdb_user_list_raw }}"
+    verbosity: "2"
+  tags: tickstack-influxdb
+
+- name: Show JSON keys
+  debug:
+    msg: "{{ influxdb_user_list_raw.json.results[0].series[0].keys() }}"
+    verbosity: "2"
+  tags: tickstack-influxdb
+
+- name: Set var if values is undefined
+  set_fact:
+    influxdb_user_list: "{{ influxdb_admin_users }} + {{ influxdb_service_users }}"
+  when: "'values' not in influxdb_user_list_raw.json.results[0].series[0].keys()"
+
+- name: Process user list
+  set_fact:
+    influxdb_user_list: >
+      "{{ influxdb_user_list_raw['json']['results'][0]['series'][0]
+      ['columns'][0]|map(attribute='user')|list }}"
+  when: "'values' in influxdb_user_list_raw.json.results[0].series[0].keys()"
+  tags: tickstack-influxdb
+
+- name: Show existing users
+  debug:
+    msg: "{{ influxdb_user_list }}"
+
+- name: Create database administrator user
+  uri:
+    url: "http://localhost:8086/query?q=CREATE%20USER%20{{ item.username }}\
+      %20WITH%20PASSWORD%20'{{ item.password }}'%20WITH%20ALL%20PRIVILEGES"
+    force_basic_auth: true
+    user: "{{ influxdb_admin_username }}"
+    password: "{{ influxdb_admin_password }}"
+    method: 'POST'
+  when: item.username not in influxdb_user_list
+  with_items: "{{ influxdb_admin_users }}"
+  tags: tickstack-influxdb
+
+- name: Create service users
+  uri:
+    url: "http://localhost:8086/query?q=CREATE%20USER%20{{ item.username }}\
+      %20WITH%20PASSWORD%20'{{ item.password }}'%20WITH%20ALL%20PRIVILEGES"
+    force_basic_auth: true
+    user: "{{ influxdb_admin_username }}"
+    password: "{{ influxdb_admin_password }}"
+    method: 'POST'
+  when: item.username not in influxdb_user_list
+  with_items: "{{ influxdb_service_users }}"
+  tags: tickstack-influxdb
+
+- name: Create default database for Telegraf and Relay
+  influxdb_database:
+    hostname: "localhost"
+    username: "{{ influxdb_admin_username }}"
+    password: "{{ influxdb_admin_password }}"
+    database_name: "{{ influxdb_database_name }}"
+    state: present
+  tags: tickstack-influxdb
+
+- name: Copy configuration file
+  template:
+    src: "templates/config.sample.toml.j2"
+    dest: "/etc/influxdb/influxdb.conf"
+    owner: root
+    group: root
+    mode: 0644
+  notify: influxdb restart
+  tags: tickstack-influxdb
+
+- name: Copy backup pre and post scripts
+  template:
+    src: "files/{{ item }}"
+    dest: "/usr/local/bin/{{ item }}"
+    owner: root
+    group: root
+    mode: 0755
+  with_items:
+    - influxdb-pre-backup.sh
+    - influxdb-post-backup.sh
+  tags: tickstack-influxdb

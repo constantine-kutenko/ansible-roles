@@ -1,0 +1,29 @@
+{{ ansible_managed }}
+
+upstream query {
+    server tickstack-influxdb-instance01.srv.scpdev:{{ influxdb_http_bind_port }};
+    server tickstack-influxdb-instance00.srv.scpdev:{{ influxdb_http_bind_port }};
+}
+
+server {
+    listen 127.0.0.1:{{ influxdb_http_bind_port }};
+    sendfile on;
+
+    location /query {
+        limit_except POST {
+            deny all;
+        }
+    proxy_pass http://query;
+    proxy_set_header    Host $host;
+    proxy_set_header    X-Real-IP $remote_addr;
+    }
+
+    location /ping {
+        limit_except GET {
+            deny all;
+        }
+        proxy_pass http://query;
+        proxy_set_header    Host $host;
+        proxy_set_header    X-Real-IP $remote_addr;
+    }
+}

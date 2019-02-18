@@ -1,0 +1,11 @@
+---
+
+# Install Kapacitor
+- name: Include the playbook that handles installation of Kapacitor package
+  include: "{{ ansible_os_family }}_install.yml"
+  tags: tickstack-kapacitor
+
+# Configure Kapacitor
+- name: Include the playbook that handles configuration of Kapacitor service
+  include: "{{ ansible_os_family }}_configure.yml"
+  tags: tickstack-kapacitor

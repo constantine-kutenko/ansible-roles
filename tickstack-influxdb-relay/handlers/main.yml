@@ -1,0 +1,28 @@
+---
+
+- name: influxdb-relay restart
+  service:
+    name: influxdb-relay
+    state: restarted
+  tags: tickstack-influxdb-relay
+
+- name: influxdb-relay stop
+  service:
+    name: influxdb-relay
+    state: stopped
+  tags: tickstack-influxdb-relay
+
+- name: influxdb-relay start
+  service:
+    name: influxdb-relay
+    state: started
+    enabled: yes
+  tags: tickstack-influxdb-relay
+
+- name: systemd reload
+  systemd:
+    name: influxdb-relay
+    state: started
+    daemon_reload: yes
+  notify: influxdb-relay restart
+  tags: tickstack-influxdb-relay

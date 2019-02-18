@@ -1,0 +1,54 @@
+---
+
+- name: Copy Chronograf service file
+  template:
+    src: templates/chronograf.service.j2
+    dest: /lib/systemd/system/chronograf.service
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - systemd reload
+    - chronograf restart
+  tags: tickstack-chronograf
+
+- name: Check if users' database exists (nginx)
+  stat:
+    path: /etc/nginx/.htpasswd
+  register: htpasswd_stat
+  tags: tickstack-chronograf
+
+- name: Create local users' database (nginx)
+  file:
+    path: /etc/nginx/.htpasswd
+    state: touch
+    owner: root
+    group: root
+    mode: 0644
+  when: not htpasswd_stat.stat.exists
+  tags: tickstack-chronograf
+
+- name: Add user to local database (nginx)
+  shell: |
+    htpasswd -b /etc/nginx/.htpasswd {{ item.username }} {{ item.password }}
+  with_items: "{{ nginx_auth_users }}"
+  tags: tickstack-nginx
+
+- name: Copy configuration file for virtual host (query)
+  template:
+    src: "templates/nginx_query.conf.j2"
+    dest: "/etc/nginx/conf.d/query.conf"
+    owner: root
+    group: root
+    mode: 0644
+  tags: tickstack-chronograf
+
+- name: Copy configuration file for virtual host (ssl)
+  template:
+    src: "templates/nginx_ssl.conf.j2"
+    dest: "/etc/nginx/conf.d/ssl.conf"
+    owner: root
+    group: root
+    mode: 0644
+  notify: restart nginx
+  tags: tickstack-chronograf

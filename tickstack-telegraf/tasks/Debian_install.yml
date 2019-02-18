@@ -10,14 +10,14 @@
     - curl
     - vim
   environment: "{{proxy_env}}"
-  tags: tickstack-agent-ubuntu
+  tags: tickstack-telegraf-ubuntu
 
 - name: Download Telegraf apt key
   apt_key:
     url: "https://repos.influxdata.com/influxdb.key"
     state: present
   environment: "{{proxy_env}}"
-  tags: tickstack-agent-ubuntu
+  tags: tickstack-telegraf-ubuntu
 
 - name: Add Telegraf repository
   apt_repository:
@@ -25,7 +25,7 @@
     filename: "telegraf"
     state: present
   environment: "{{proxy_env}}"
-  tags: tickstack-agent-ubuntu
+  tags: tickstack-telegraf-ubuntu
 
 - name: Install Telegraf package
   apt:
@@ -34,4 +34,4 @@
     update_cache: "yes"
     cache_valid_time: 3600
   notify: telegraf start
-  tags: tickstack-agent-ubuntu
+  tags: tickstack-telegraf-ubuntu

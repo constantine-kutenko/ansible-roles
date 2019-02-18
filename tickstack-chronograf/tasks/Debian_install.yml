@@ -1,0 +1,38 @@
+---
+
+- name: Install packages and dependecies
+  apt:
+    name: {{ item }}
+    state: present
+    update_cache: yes
+  with_items:
+    - mc
+    - curl
+    - vim
+    - apache2-utils
+  environment: "{{proxy_env}}"
+  tags: tickstack-chronograf
+
+- name: Download Chronograf apt key
+  apt_key:
+    url: "https://repos.influxdata.com/influxdb.key"
+    state: present
+  environment: "{{proxy_env}}"
+  tags: tickstack-chronograf
+
+- name: Add Chronograf repository
+  apt_repository:
+    repo: "deb https://repos.influxdata.com/ubuntu xenial stable"
+    filename: "chronograf"
+    state: present
+  environment: "{{proxy_env}}"
+  tags: tickstack-chronograf
+
+- name: Install Chronograf package
+  apt:
+    name: chronograf
+    state: present
+    update_cache: "yes"
+    cache_valid_time: 3600
+  notify: chronograf start
+  tags: tickstack-chronograf

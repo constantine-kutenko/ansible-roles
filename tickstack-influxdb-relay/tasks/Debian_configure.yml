@@ -1,0 +1,21 @@
+---
+
+- name: Copy InfluxDB-Relay configuration file
+  template:
+    src: templates/relay.toml.j2
+    dest: /etc/influxdb/relay.toml
+    owner: "{{ influxdb_relay_user }}"
+    group: "{{ influxdb_relay_group }}"
+    mode: 0755
+  notify:
+    - systemd reload
+    - influxdb-relay restart
+  tags: tickstack-influxdb-relay
+
+- name: Start InfluxDB-Relay service
+  shell: |
+    # Reload daemon after changing service configuration file
+    systemctl daemon-reload
+    systemctl start influxdb-relay
+    systemctl enable influxdb-relay
+  tags: tickstack-influxdb-relay

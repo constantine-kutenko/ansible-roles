@@ -7,4 +7,4 @@
     owner: telegraf
     group: telegraf
   notify: telegraf restart
-  tags: tickstack-agent-rhel
+  tags: tickstack-telegraf-ubuntu

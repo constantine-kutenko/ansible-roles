@@ -1,0 +1,106 @@
+---
+
+# Deploy InfluxDB database servers' containers
+- hosts: tickstack-influxdb-hosts
+  become: yes
+  tags: tickstack-influxdb-instance
+  roles:
+    - role: lxd-container
+      lxd_container_name: tickstack-influxdb-instance
+      lxd_container_groupname: tickstack-influxdb-instance
+      lxd_image_name: scp/ubuntu
+      lxd_profiles: ["M", "scp", "net_prim"]
+
+- hosts: tickstack-influxdb-instance
+  become: yes
+  roles:
+    - role: extra_facts
+    - role: dhcp-client
+    - role: lxd-container-config
+      pm_use_public_mirror: yes
+      lxd_networks:
+        - name: brprim
+
+- hosts: tickstack-influxdb-instance
+  any_errors_fatal: true
+  become: yes
+  roles:
+    - role: tickstack-influxdb
+    - role: backup
+      service_name: tickstack-influxdb
+      backup_pre_script: /usr/local/bin/influxdb-pre-backup.sh
+      backup_post_script: /usr/local/bin/influxdb-post-backup.sh
+      includes:
+        - /tmp/influxdb-duply/influxdb.tar
+
+# Deploy TICK stack servers' containers
+- hosts: tickstack-hosts
+  become: yes
+  tags: ["tickstack-server"]
+  roles:
+    - role: lxd-container
+      lxd_container_name: tickstack-server
+      lxd_container_groupname: tickstack-server
+      lxd_image_name: scp/ubuntu
+      lxd_profiles: ["M", "scp", "net_prim", "net_ext"]
+
+- hosts: tickstack-server
+  become: yes
+  roles:
+    - role: extra_facts
+    - role: dhcp-client
+      default_router: False
+    - role: lxd-container-config
+      pm_use_public_mirror: yes
+      lxd_networks:
+        - name: brprim
+        - name: brext
+          type: static
+          ip: "{{ tickstack_servers.ips[host_index | int] }}"
+          network: "{{ tickstack_servers.mask }}"
+          gateway: "{{ ext_default_gateway }}"
+
+- hosts: tickstack-server
+  any_errors_fatal: true
+  become: yes
+  vars:
+    ssl_certs_privkey_path: "{{ cert_dir }}{{ webserver_site }}/server.key"
+    ssl_certs_cert_path: "{{ cert_dir }}{{ webserver_site }}/server.chain.crt"
+    webserver_site: "{{ tickstack_service_host }}"
+  roles:
+    - role: certificate
+      cert_name: "{{ base_domain_public }}"
+      cert_hostname: "{{ webserver_site }}"
+    - role: jdauphant.nginx
+      nginx_sites:
+        default:
+          - |
+            listen 0.0.0.0:80 default_server;
+            server_name _;
+            # Redirect to HTTPS
+            return 301 https://$host$request_uri;
+    - role: tickstack-influxdb-relay
+    - role: tickstack-kapacitor
+    - role: tickstack-chronograf
+    - role: tickstack-telegraf
+    - role: keepalived
+      keepalived_conf:
+        router_id: TICKSTACK_CLUSTER
+        chk_scripts:
+          - name: chk_tickstack
+            script: '"systemctl status nginx >/dev/null"'
+            interval: 1
+            fall: 1
+            rise: 1
+        vrrps:
+          - name: tickstack
+            interface: brprim
+            pass: "{{ vault_tickstack_vrrp_pass }}"
+            vips:
+              - ip: "{{ tickstack_vrrp_ip_address.ip }}"
+                mask: "/{{ tickstack_vrrp_ip_address.mask }}"
+                interface: brext
+            virtual_routes:
+              - default via {{ ext_default_gateway }} dev brext
+            chk_scripts:
+              - chk_tickstack

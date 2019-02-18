@@ -1,0 +1,78 @@
+---
+
+- name: Install repository for Go
+  apt_repository:
+    repo: "ppa:gophers/archive"
+    state: present
+    update_cache: "yes"
+  environment: "{{proxy_env}}"
+  tags: tickstack-influxdb-relay
+
+- name: Install all necessary packages and dependecies
+  apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: "yes"
+  with_items:
+    - mc
+    - curl
+    - vim
+    - git
+    - golang-1.8-go
+  environment: "{{proxy_env}}"
+  tags: tickstack-influxdb-relay
+
+# Install InfluxDB-relay
+
+- name: Create group
+  group:
+    name: "{{ influxdb_relay_group }}"
+    state: present
+  tags: tickstack-influxdb-relay
+
+- name: Configure user groups
+  user:
+    name: "{{ influxdb_relay_user }}"
+    groups: "{{ influxdb_relay_group }}"
+    append: yes
+  tags: tickstack-influxdb-relay
+
+- name: Check if influxdb-relay is installed
+  stat:
+    path: /usr/local/bin/influxdb-relay
+  register: influxdb_relay_bin
+  tags: tickstack-influxdb-relay
+
+- name: Build influxdb-relay binary
+  shell: /usr/lib/go-1.8/bin/go get -u github.com/influxdata/influxdb-relay
+  environment:
+    PATH: "/usr/local/go/bin:{{ ansible_env.PATH }}"
+    GOPATH: "{{ ansible_env.HOME }}/go"
+  when: not influxdb_relay_bin.stat.exists
+  tags: tickstack-influxdb-relay
+
+- name: Copy influxdb-relay to the bin path
+  command: "cp {{ ansible_env.HOME }}/go/bin/influxdb-relay /usr/local/bin/"
+  args:
+    creates: "/usr/local/bin/influxdb-relay"
+  when: not influxdb_relay_bin.stat.exists
+  tags: tickstack-influxdb-relay
+
+- name: Ensure configuration directory exists
+  file:
+    path: /etc/influxdb
+    state: directory
+    owner: "{{ influxdb_relay_user }}"
+    group: "{{ influxdb_relay_group }}"
+    mode: 0755
+  tags: tickstack-influxdb-relay
+
+- name: Copy service file
+  template:
+    src: templates/influxdb-relay.service.j2
+    dest: /etc/init.d/influxdb-relay
+    owner: root
+    group: root
+    mode: 0755
+  notify: influxdb-relay start
+  tags: tickstack-influxdb-relay

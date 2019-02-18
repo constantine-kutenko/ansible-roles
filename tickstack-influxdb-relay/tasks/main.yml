@@ -1,0 +1,11 @@
+---
+
+# Install InfluxDB
+- name: Include the playbook that handles installation of InfluxDB-relay package
+  include: "{{ ansible_os_family }}_install.yml"
+  tags: tickstack-influxdb-relay
+
+# Configure InfluxDB
+- name: Include the playbook that handles configuration of InfluxDB-relay service
+  include: "{{ ansible_os_family }}_configure.yml"
+  tags: tickstack-influxdb-relay
