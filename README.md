@@ -6,6 +6,7 @@ A set of Ansible roles, playbooks and hints
 
 | Name | Use case | Description |
 |------|----------|-------------|
+| jenkins | | |
 | tickstack-telegraf | Install Telegraf as an agent for TICK Stack| Part of infrastructure and applications monitoring approach |
 | tickstack-influxdb | Install InfluxDB | Stores timestamped data received from sources |
 | tickstack-influxdb-relay | Install InfluxDB-relay | Provides basic a HA layer to InfluxDB |

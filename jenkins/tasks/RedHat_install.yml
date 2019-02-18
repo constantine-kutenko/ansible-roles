@@ -1,0 +1,5 @@
+---
+
+- name: "Show an error and exit if was applied to a Centos/RedHat instance"
+  fail:
+    msg: "Sorry, this role is not supposed to be applied to a Centos/RedHat instance"

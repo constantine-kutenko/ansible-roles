@@ -1,0 +1,15 @@
+---
+
+# install jenkins
+- name: Include the plabook that handles installation of Jenkins package
+  include: "{{ ansible_os_family }}_install.yml"
+  tags: [jenkins]
+
+- name: Install backup helper
+  copy:
+    src: "jenkins-{{ item }}-backup.sh"
+    dest: "/usr/local/bin/jenkins-{{ item }}-backup.sh"
+    mode: 0755
+  with_items:
+    - pre
+    - post

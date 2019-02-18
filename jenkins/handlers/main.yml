@@ -1,0 +1,16 @@
+---
+
+- name: jenkins_restart
+  service:
+    name: jenkins
+    state: restarted
+
+- name: jenkins_stop
+  service:
+    name: jenkins
+    state: stopped
+
+- name: jenkins_start
+  service:
+    name: jenkins
+    state: started

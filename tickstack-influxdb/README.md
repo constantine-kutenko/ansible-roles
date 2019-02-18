@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This role is used to install and configure an InfluxB service into a LXD container on a Head Node.
+This role is used to install and configure an InfluxB service into a LXD container.
 
 # Overview
 

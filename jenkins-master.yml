@@ -1,0 +1,66 @@
+---
+
+- hosts: jenkins-hosts
+  become: yes
+  tags: ["jenkins"]
+  roles:
+    - role: lxd-container
+      lxd_container_name: jenkins-master
+      lxd_container_groupname: jenkins-master-server
+      lxd_image_name: scp/ubuntu
+      lxd_profiles: ["M", "scp", "net_prim", "net_ext"]
+
+- hosts: jenkins-master-server
+  become: yes
+  roles:
+    - role: extra_facts
+    - role: lxd-container-config
+      pm_use_public_mirror: yes
+      lxd_networks:
+        - name: brprim
+        - name: brext
+          type: static
+          ip: "{{ jenkins_vip_extern.ip }}"
+          network: "{{ jenkins_vip_extern.mask }}"
+          gateway: "{{ ext_default_gateway }}"
+      cert_name: "{{ base_domain_public }}"
+      cert_hostname: "jenkins-build.{{ base_domain_public }}"
+
+- hosts: jenkins-master-server
+  any_errors_fatal: true
+  become: yes
+  vars:
+    ssl_certs_privkey_path: "{{ cert_dir }}{{ webserver_site }}/server.key"
+    ssl_certs_cert_path: "{{ cert_dir }}{{ webserver_site }}/server.chain.crt"
+    webserver_site: "jenkins-build.{{ base_domain_public }}"
+    webserver_root: "{{ repos_dir_fullpath }}/"
+  roles:
+    - role: certificate
+      cert_name: "{{ webserver_site }}"
+      cert_hostname: "jenkins-build.{{ base_domain_public }}"
+    - role: jdauphant.nginx
+      nginx_sites:
+        default:
+          - listen 80
+          - server_name {{ webserver_site }}
+          - return 301 https://$host$request_uri
+        jenkins:
+          - listen 443 ssl http2
+          - server_name {{ webserver_site }}
+          - ssl_certificate_key "{{ ssl_certificate_files.key }}"
+          - ssl_certificate "{{ ssl_certificate_files.crt }}"
+          - root /var/www/html
+          - index index.txt
+          - |
+            location / {
+              proxy_pass http://127.0.0.1:8080;
+              proxy_set_header Host      $host;
+              proxy_set_header X-Real-IP $remote_addr;
+            }
+    - role: jenkins
+    - role: backup
+      service_name: jenkins-master
+      backup_pre_script: /usr/local/bin/jenkins-pre-backup.sh
+      backup_post_script: /usr/local/bin/jenkins-post-backup.sh
+      includes:
+        - /tmp/jenkins-duply/jenkins.tar
