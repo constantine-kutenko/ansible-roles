@@ -1,0 +1,8 @@
+---
+
+- name: Install prerequirements
+  yum:
+    name: python-docker-py
+    state: latest
+  tags:
+    - install

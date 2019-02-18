@@ -1,0 +1,5 @@
+{{ "Created by Ansible" | comment }}
+
+HOSTNAME=$(hostname --fqdn) && \
+payload="{\"username\":\"CFSSL Client Notification\", \"text\": \"ERROR\", \"attachments\":[{\"title\": \"${HOSTNAME}\",\"text\": \"Server: ${HOSTNAME}\nUpdating a certificate cannot be performed due to an error.\nCFSSL updater service cannot start.\", \"color\": \"#ef0000\"}]}" && \
+curl -s -d "payload=$payload" "{{ slack_webhook_url }}"

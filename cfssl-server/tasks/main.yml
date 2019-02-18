@@ -1,0 +1,17 @@
+---
+
+- include_tasks: "{{ ansible_distribution | lower() }}-{{ ansible_distribution_major_version }}.yml"
+
+- name: Run {{ role_name }}
+  docker_container:
+    name: cfssl-server
+    image: "{{ cfssl_registry_address }}/{{ cfssl_image_name}}:{{ cfssl_image_tag }}"
+    pull: yes
+    ports:
+      - 8888:8888
+    env:
+      CERT_REPO_SSH_KEY: "{{ cert_repo_ssh_key }}"
+      CERT_REPO_URL: "{{ cert_repo_url }}"
+      CERT_REPO_BRANCH: "{{ cert_repo_branch }}"
+      CFSSL_AUTH_STRING: "{{ cfssl_auth_string }}"
+    state: started

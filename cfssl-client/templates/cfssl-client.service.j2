@@ -1,0 +1,12 @@
+{{ "Created by Ansible" | comment }}
+
+[Unit]
+Description=CFSSL certificates updating service
+OnFailure=cfssl-client-notifier.service
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+ExecStart=/bin/bash -c {{ cfssl_client_bin_dir }}/cfssl-client.sh
+WorkingDirectory={{ cfssl_client_bin_dir }}

@@ -1,0 +1,9 @@
+---
+
+cfssl_registry_address: "registry.example.com"
+cfssl_image_name: "cfssl"
+cfssl_image_tag: "latest"
+cfssl_auth_string: ""
+cert_repo_ssh_key: ""
+cert_repo_url: ""
+cert_repo_branch: ""

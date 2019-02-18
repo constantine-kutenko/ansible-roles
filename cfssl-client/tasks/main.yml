@@ -1,0 +1,125 @@
+---
+
+- name: Install packages and dependecies for cfssl-client
+  package:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - curl
+    - openssl
+    - jq
+    - ca-certificates
+  tags: 
+    - cfssl-client
+    - install
+
+- name: Create a directories for cfssl-client binary, root and host certificates
+  file:
+    path: "{{ item.name }}"
+    state: directory
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ item.group | default('root') }}"
+    mode: "{{ item.mode | default('0755') }}"
+  with_items:
+    - { 'name': '{{ cfssl_client_bin_dir }}/{{ cfssl_client_version }}', mode: '0755' }
+    - { 'name': '{{ cfssl_client_data_dir }}/certs', mode: '0700' }
+  tags:
+    - cfssl-client
+
+- name: Copy cfssl-client scripts, configurations and systemd units
+  template:
+    src: "{{ item.name }}.j2"
+    dest: "{{ item.path }}/{{ item.name }}"
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ item.group | default('root') }}"
+    mode: "{{ item.mode | default('0600') }}"
+  with_items:
+    - { 'name': 'cfssl-client.sh', path: '{{ cfssl_client_bin_dir }}', mode: '0700' }
+    - { 'name': 'cfssl-client-notifier.sh', path: '{{ cfssl_client_bin_dir}}', mode: '0700' }
+    - { 'name': 'host-request-profile.json', path: '{{ cfssl_client_bin_dir}}' }
+    - { 'name': 'cfssl-client.service', path: '/etc/systemd/system' }
+    - { 'name': 'cfssl-client.timer', path: '/etc/systemd/system' }
+    - { 'name': 'cfssl-client-notifier.service', path: '/etc/systemd/system' }
+  tags:
+    - cfssl-client
+
+- name: Download CFSSL client binary files
+  unarchive:
+    src: "{{ cfssl_download_url }}"
+    dest: "{{ cfssl_client_bin_dir }}/{{ cfssl_client_version }}"
+    owner: root
+    group: root
+    mode: 0700
+    remote_src: yes
+  tags:
+    - cfssl-client
+
+- name: Create a symbolic link for cfssl binary
+  file:
+    src: "{{ cfssl_client_bin_dir }}/{{ cfssl_client_version }}/cfssl"
+    dest: "/usr/bin/cfssl"
+    owner: root
+    group: root
+    state: link
+  tags:
+    - cfssl-client
+
+- name: Ensure a local certificate directory exists (RedHat)
+  file: 
+    state: directory
+    path: "/etc/pki/ca-trust/source/anchors/"
+  when: ansible_os_family | lower() == "redhat"
+  tags:
+    - cfssl-client
+
+- name: Save a root certificate into a file (RedHat)
+  copy:
+    content: "{{ cfssl_root_certificate }}"
+    dest: "/etc/pki/ca-trust/source/anchors/chain-ca.crt"
+    owner: root
+    group: root
+    mode: 0600
+  when: ansible_os_family | lower() == "redhat"
+  tags:
+    - cfssl-client
+
+- name: Install a root CA certificate into the trusted certificate store (RedHat)
+  shell: /usr/bin/update-ca-trust extract
+  when: ansible_os_family | lower() == "redhat"
+  tags:
+    - cfssl-client
+
+- name: Ensure a local certificate directory exists (Debian)
+  file: 
+    state: directory
+    path: "/usr/local/share/ca-certificates/extra"
+  when: ansible_os_family | lower() == "debian"
+  tags:
+    - cfssl-client
+
+- name: Save a root certificate into a file (Debian)
+  copy:
+    content: "{{ cfssl_root_certificate }}"
+    dest: "/usr/local/share/ca-certificates/chain-ca.crt"
+    owner: root
+    group: root
+    mode: 0600
+  when: ansible_os_family | lower() == "debian"
+  tags:
+    - cfssl-client
+
+- name: Install a root CA certificate into the trusted certificate store (Debian)
+  shell: /usr/sbin/update-ca-certificates
+  when: ansible_os_family | lower() == "debian"
+  tags:
+    - cfssl-client
+
+- name: Enable and start a systemd cfssl-client timer unit
+  systemd:
+    name: "cfssl-client.timer"
+    state: started
+    enabled: True
+    daemon-reload: yes
+  notify: restart_timer
+  tags:
+    - cfssl-client

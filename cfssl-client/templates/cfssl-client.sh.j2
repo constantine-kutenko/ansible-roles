@@ -1,0 +1,202 @@
+#!/bin/bash
+
+CFSSL_CLIENT_HOME_DIR="{{ cfssl_client_bin_dir }}"
+CFSSL_CLIENT_DATA_DIR="{{ cfssl_client_data_dir }}"
+CFSSL_CLIENT_CERT_THRESHOLD="{{ cfssl_client_expiration_threshold }}"
+CFSSL_CLIENT_ROOT_CERT_FILE="{{ cfssl_client_data_dir }}/rootCA/example_rootca.pem"
+CFSSL_SERVER_ADDRESS="{{ cfssl_server_address }}"
+CFSSL_SERVER_PORT="{{ cfssl_server_port }}"
+SLACK_WEBHOOK_URL="{{ slack_webhook_url }}"
+CURL_TIMEOUT="{{ curl_request_timeout }}"
+
+function log ()
+{
+    #
+    # Logging
+    #
+
+    echo -e "$1" 1>/dev/null
+}
+
+function sendNotification ()
+{
+    #
+    # Sends notification to Slack about errors, warnings and certificates that are about to expire
+    #
+
+    # Log to stdout
+    log "FATAL: $1\nDetails: $2"
+
+    # Prepare JSON payload
+    payload="{\"username\":\"CFSSL Client notification\", \"text\": \"ERROR\", \"attachments\":[{\"title\": \"${CFSSL_CLIENT_FQDN}\",\"text\": \"Server: ${CFSSL_CLIENT_FQDN}\n\nMessage:\n$1\n\nDetails:\n$2\", \"color\": \"#ef0000\"}]}"
+
+    # Send to Slack
+    curl -s -d "payload=$payload" "${SLACK_WEBHOOK_URL}"
+
+    exit 127
+}
+
+function verifyExpirationDate ()
+{
+    #
+    # Verifies the expiration date for a certificate
+    #
+
+    certexp=$(date -d "$(: | openssl x509 -in ${CFSSL_CLIENT_CERT_FILE} -text | grep 'Not After' | awk '{print $4,$5,$7}')" '+%s')
+    curdate=$(date +%s)
+    
+    log "A certificate expires in $(( (certexp - curdate) / 86400 )) days on $(openssl x509 -in ${CFSSL_CLIENT_CERT_FILE} -enddate -noout | sed 's/notAfter\=//')"
+
+    if $(which openssl) x509 -checkend ${inSeconds} -noout -in ${CFSSL_CLIENT_CERT_FILE}
+    then
+        # A certificate is not going to expire soon
+        log "Certificate is good for another ${CFSSL_CLIENT_CERT_THRESHOLD} days!"
+        
+        log "Validating a host certificate against a root certificate or chain."
+        
+        # CentOS
+        if [ -e /etc/pki/ca-trust/source/anchors/chain-ca.crt ]
+        then
+            result=$($(which openssl) verify -verbose -CAfile /etc/pki/ca-trust/source/anchors/chain-ca.crt ${CFSSL_CLIENT_CERT_FILE} 2>/dev/null | awk '{ print $2 }')
+
+            if [ "${result}" == "OK" ]
+            then 
+                log "A host certificate matches against the root one."
+            else
+                log "A host certificate does not match against the root one (CentOS).\nTrying to issues a new one..."
+                getCertificate
+            fi
+        fi
+
+        # Debian
+        if [ -e /usr/local/share/ca-certificates/chain-ca.crt ]
+        then
+            result=$(openssl verify -verbose -CAfile /usr/local/share/ca-certificates/chain-ca.crt ${CFSSL_CLIENT_CERT_FILE} 2>/dev/null | awk '{ print $2 }')
+            
+            if [ "${result}" == "OK" ]
+            then 
+                log "A host certificate matches against the root one."
+            else
+                log "A host certificate does not match against the root one (Debian).\nTrying to issues a new one..."
+                getCertificate
+            fi
+        fi
+    else
+        log "A certificate has expired or will do so within ${CFSSL_CLIENT_CERT_THRESHOLD} days!"
+
+        # Try to get a new certificate for the host
+        getCertificate
+    fi
+}
+
+function getCertificate ()
+{
+    #
+    # Sends a request to CFSSL server for a new certificate
+    #
+
+    log "Trying to get a certificate for ${CFSSL_CLIENT_FQDN}"
+
+    # Verify if CFSSL server is available form a host
+    result=$(curl -s --connect-timeout ${CURL_TIMEOUT} -d '{"label": "default"}' https://${CFSSL_SERVER_ADDRESS}:${CFSSL_SERVER_PORT}/api/v1/cfssl/info | jq -r '.success')
+    
+    if [ "$result" != "true" ]
+    then
+        # CFSSL server is not reachable from a host
+
+        status_message="Certificate server ${CFSSL_SERVER_ADDRESS}:${CFSSL_SERVER_PORT} is not reachable from ${CFSSL_CLIENT_FQDN}"
+        [ -z "$result" ] && status_data="CFSSL server did not respond within ${CURL_TIMEOUT} seconds."
+        sendNotification "$status_message" "$status_data"
+    else
+        # CFSSL server is reachable from a host, requesting a certificate
+
+        log "Certificate server ${CFSSL_SERVER_ADDRESS}:${CFSSL_SERVER_PORT} is reachable from a host. Requesting a certificate..."
+
+        # Convert a list of IP addresses into a list
+        IFSorigin=$IFS
+        IFS=$' '
+        read -a array <<< "${CFSSL_CLIENT_IP_ADDRESSES}"
+        IFS=$IFSorigin
+
+        # Verify if there's at least one IP address to be added into a certificate
+        if [ -z "${CFSSL_CLIENT_IP_ADDRESSES}" ]; then echo "It is impossible to obtain a list of IP addresses for this host."; exit 1; fi
+
+        # Shape a list of IP addresses in JSON format
+        count=1
+        {% raw %}
+        array_len=${#array[@]}
+        {% endraw %}
+        for item in "${array[@]}"
+        do
+            # echo -n "\"${item}\""
+            if [ "${count}" -lt "${array_len}" ]
+            then
+                json_array=("${json_array[@]}" $(echo -n "\"${item}\","))
+            else
+                json_array=("${json_array[@]}" $(echo -n "\"${item}\""))
+            fi
+            count=$((${count}+1))
+        done
+
+        # Generate an CSR JSON file
+        request_file="${CFSSL_CLIENT_DATA_DIR}/certs/${CFSSL_CLIENT_FQDN}-csr.json"
+        echo "{\"hosts\": [\"${CFSSL_CLIENT_HOSTNAME}\", \"${CFSSL_CLIENT_FQDN}\", ${json_array[@]}], \"key\": { \"algo\": \"rsa\",\"size\": 2048 }, \"names\": [{ \"CN\": \"${CFSSL_CLIENT_HOSTNAME}\", \"C\": \"UK\", \"L\": \"London\", \"O\": \"Company name, Inc.\", \"OU\": \"Company name, Inc.\", \"ST\": \"London\" }]}" > ${request_file}
+
+        # Request a certificate
+        result=$(cfssl gencert -hostname="${CFSSL_CLIENT_FQDN}" -profile=default -config=${CFSSL_CLIENT_HOME_DIR}/host-request-profile.json ${request_file} 2>&1 | grep -o '{[^}]*}')
+
+        # Analyse the result
+        if [ "$?" -ne 0 ] || [[ "$result" = *"{\"code\":"* ]]
+        then
+            # Something went wrong
+
+            status_message="A certificate for ${CFSSL_CLIENT_FQDN} cannot be obtained due to an error. Consider manual issuing a certificate."
+            status_data="$(echo $result | jq -r '.message')"
+            sendNotification "$status_message" "$status_data"
+        else
+            # Parse the result of the request
+
+            echo $result | jq -r '.cert' > "${CFSSL_CLIENT_DATA_DIR}/certs/${CFSSL_CLIENT_FQDN}.pem"
+            echo $result | jq -r '.csr' > "${CFSSL_CLIENT_DATA_DIR}/certs/${CFSSL_CLIENT_FQDN}.csr"
+            echo $result | jq -r '.key' > "${CFSSL_CLIENT_DATA_DIR}/certs/${CFSSL_CLIENT_FQDN}.key"
+            chmod 0600 ${CFSSL_CLIENT_DATA_DIR}/certs/${CFSSL_CLIENT_FQDN}.*
+
+            # Clean
+            result=""
+            rm -f request_file
+        fi
+    fi
+}
+
+# Get a full path to certificate file
+CFSSL_CLIENT_FQDN="$(hostname --fqdn)""
+CFSSL_CLIENT_HOSTNAME="$(hostname -s)""
+CFSSL_CLIENT_IP_ADDRESSES="{{ cfssl_requested_ips | join(' ') }}""
+CFSSL_CLIENT_CERT_FILE="${CFSSL_CLIENT_DATA_DIR}/certs/${CFSSL_CLIENT_FQDN}.pem"
+inSeconds=$((86400*${CFSSL_CLIENT_CERT_THRESHOLD}))
+
+# Verify if a certificate file peresents in a directory
+if [ -e "${CFSSL_CLIENT_CERT_FILE}" ]
+then
+    # A certificate file peresents
+    
+    # Check if a certificate file is an actual and valid PEM-encoded certificate
+    if [ "$(head -n 1 ${CFSSL_CLIENT_CERT_FILE})" == "-----BEGIN CERTIFICATE-----" ] && [ "$(tail -n 10 ${CFSSL_CLIENT_CERT_FILE} | tac | awk 'NF{print;exit}')" == "-----END CERTIFICATE-----" ]
+    then
+        # It's a valid PEM-encoded file
+
+        # Examine the expiration date
+        verifyExpirationDate
+    else
+        # Not a PEM-encoded certificate
+        status_message="Certificate file \"${CFSSL_CLIENT_CERT_FILE}\" is not in PEM format"
+        sendNotification "$status_message"
+    fi
+else
+    # There's no certificate file for this server
+
+    log "There's no certificate file for this server yet."
+
+    # Try to issue the very first certificate
+    getCertificate
+fi

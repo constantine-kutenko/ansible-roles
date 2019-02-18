@@ -1,0 +1,9 @@
+---
+
+- name: Install CFSSL server
+  hosts: cfssl-server
+  become: true
+  roles:
+    - role: cfssl-server
+      tags:
+        - cfssl

@@ -1,0 +1,19 @@
+{
+  "signing": {
+    "default": {
+      "auth_remote": {
+        "remote": "ca_server",
+        "auth_key": "default"
+      }
+    }
+  },
+  "auth_keys": {
+    "default": {
+      "key": "{{ cfssl_server_token }}",
+      "type": "standard"
+    }
+  },
+  "remotes": {
+    "ca_server": "{{ cfssl_server_scheme }}://{{ cfssl_server_address }}:{{ cfssl_server_port }}"
+  }
+}

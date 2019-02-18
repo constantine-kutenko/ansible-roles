@@ -1,0 +1,6 @@
+---
+
+- name: restart_timer
+  systemd:
+    name: "cfssl-client.timer"
+    state: reloaded

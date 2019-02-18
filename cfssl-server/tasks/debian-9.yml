@@ -1,0 +1,8 @@
+---
+
+- name: Install prerequirements
+  apt:
+    name: python3-docker
+    state: latest
+  tags:
+    - install

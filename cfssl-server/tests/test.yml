@@ -1,0 +1,6 @@
+---
+
+- hosts: testing-containers
+  connection: docker
+  roles:
+    - ../cfssl-server

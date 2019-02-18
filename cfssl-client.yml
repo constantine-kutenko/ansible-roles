@@ -1,0 +1,10 @@
+---
+
+- hosts: "{{ environment }}"
+  become: yes
+  gather_facts: True
+  tags: 
+    - cfssl-client
+
+  roles:
+    - role: cfssl-client

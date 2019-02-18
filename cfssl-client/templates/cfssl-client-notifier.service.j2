@@ -1,0 +1,8 @@
+{{ "Created by Ansible" | comment }}
+
+[Unit]
+Description=Reports cfssl-client service and/or timer error to Slack
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/bash -c "{{ cfssl_client_bin_dir }}/cfssl-client-notifier.sh"

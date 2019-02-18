@@ -7,6 +7,8 @@ A set of Ansible roles, playbooks and hints
 | Name | Use case | Description |
 |------|----------|-------------|
 | bind | Install and start a bind DNS server | Provides name resolving |
+| cfssl-client | Install CloudFlare's PKI/TLS client as a systemd service | Issues and renews SSL certificated for a host |
+| cfssl-server | Install CFSSL Server | Holds an intermediate certificate and accepts requests for issueing and/or renewing hosts' certificates |
 | jenkins | Install Jenkins | |
 | tickstack-telegraf | Install Telegraf as an agent for TICK Stack| Part of infrastructure and applications monitoring approach |
 | tickstack-influxdb | Install InfluxDB | Stores timestamped data received from sources |
