@@ -9,6 +9,7 @@ A set of Ansible roles, playbooks and hints
 | bind | Install and start a bind DNS server | Provides name resolving |
 | cfssl-client | Install CloudFlare's PKI/TLS client as a systemd service | Issues and renews SSL certificated for a host |
 | cfssl-server | Install CFSSL Server | Holds an intermediate certificate and accepts requests for issueing and/or renewing hosts' certificates |
+| dhcpd | Install an ISC DHCPD Failover Cluster | |
 | host-updater | Install a script and a respective service| Updates RHEL-based host |
 | jenkins | Install Jenkins | |
 | tickstack-telegraf | Install Telegraf as an agent for TICK Stack| Part of infrastructure and applications monitoring approach |

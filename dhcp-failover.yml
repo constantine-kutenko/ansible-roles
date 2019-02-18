@@ -1,0 +1,9 @@
+---
+
+- hosts: dhcp-hosts
+  become: yes
+  gather_facts: True
+  tags: 
+    - dhcp-failover
+  roles:
+    - role: dhcp-failover

@@ -1,0 +1,104 @@
+{{ "Created by Ansible" | comment }}
+
+{% if dhcpd_failover_enabled is sameas true %}{# Cluster configuration #}
+{% if inventory_hostname == dhcpd_failover_primary_hostname %}
+{% for item in dhcpd_dns_forward_zones %}
+zone {{ item.zone }} {
+  primary           {{ dhcpd_failover_primary_addr }};
+  secondary         {{ dhcpd_failover_secondary_addr }};
+  key               {{ item.key }};
+}
+
+{% endfor %}
+{% for item in dhcpd_dns_reverse_zones %}
+zone {{ item.zone }} {
+  primary           {{ dhcpd_failover_primary_addr }};
+  secondary         {{ dhcpd_failover_secondary_addr }};
+  key               {{ item.key }};
+}
+
+{% endfor %}
+{% elif inventory_hostname == dhcpd_failover_secondary_hostname %}
+{% for item in dhcpd_dns_forward_zones %}
+zone {{ item.zone }}. {
+  primary           {{ dhcpd_failover_primary_addr }};
+  key               {{ item.key }};
+}
+
+{% endfor %}
+{% for item in dhcpd_dns_reverse_zones %}
+zone {{ item.zone }} {
+  primary           127.0.0.1;
+  key               {{ item.key }};
+}
+
+{% endfor %}
+{%- endif %}
+{% for item in dhcpd_subnets %}
+subnet {{ item.subnet }} netmask {{ item.netmask }} {
+{% if item.authoritative %}
+  authoritative;
+{% endif %}
+  ddns-rev-domainname      "in-addr.arpa.";
+{% for option_item in item.options %}
+  option {{ option_item.option }}         {{ option_item.value }};
+{% endfor %}
+{% if inventory_hostname == dhcpd_failover_primary_addr %}
+{% for option_item in item.options %}
+  option {{ option_item.option }}      {{ option_item.value }};
+{% endfor %}
+{% endif %}
+  pool {
+    failover peer           "{{ item.pool.failover_peer }}";
+    range                   {{ item.pool.range }};
+{% if item.pool.default_lease_time is defined %}
+    default-lease-time      {{ item.pool.max_lease_time }};
+{% endif %}
+{% if item.pool.default_lease_time is defined %}
+    max-lease-time          {{ item.pool.max_lease_time }};
+{% endif %}
+{% for option_item in item.pool.options %}
+    option {{ option_item.option }}      {{ option_item.value }};
+{% endfor %}
+  }
+}
+
+{% endfor %}
+{% else %}{# Standalone configuration #}
+{% for item in dhcpd_dns_forward_zones %}
+zone {{ item.zone }} {
+  primary           {{ dhcpd_failover_primary_addr }};
+  key               {{ item.key }};
+}
+
+{% endfor %}
+{% for item in dhcpd_dns_reverse_zones %}
+zone {{ item.zone }} {
+  primary           {{ dhcpd_failover_primary_addr }};
+  key               {{ item.key }};
+}
+
+{% endfor %}
+{% for item in dhcpd_subnets %}
+subnet {{ item.subnet }} netmask {{ item.netmask }} {
+  authoritative;
+  ddns-rev-domainname      "in-addr.arpa.";
+{% for option_item in item.options %}
+  option {{ option_item.option }}         {{ option_item.value }};
+{% endfor %}
+  pool {
+    range                   {{ item.pool.range }};
+{% if item.pool.default_lease_time is defined %}
+    default-lease-time      {{ item.pool.max_lease_time }};
+{% endif %}
+{% if item.pool.default_lease_time is defined %}
+    max-lease-time          {{ item.pool.max_lease_time }};
+{% endif %}
+{% for option_item in item.pool.options %}
+    option {{ option_item.option }}      {{ option_item.value }};
+{% endfor %}
+  }
+}
+
+{% endfor %}
+{%- endif -%}{# dhcpd_failover_enabled #}

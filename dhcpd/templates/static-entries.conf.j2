@@ -1,0 +1,8 @@
+{{ "Created by Ansible" | comment }}
+
+{% for item in dhcpd_static_entries %}
+host {{ item.host }} {
+    hardware ethernet {{ item.hardware_addr }};
+    fixed-address     {{ item.fixed_address }};
+  }
+{% endfor %}

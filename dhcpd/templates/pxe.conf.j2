@@ -1,0 +1,54 @@
+{{ "Created by Ansible" | comment }}
+
+class "UEFI-32-1" {
+  match if substring(option vendor-class-identifier, 0, 20) = "PXEClient:Arch:00006";
+  if exists user-class and option user-class = "iPXE" {
+    filename "ipxe-uefi.cfg";
+  } else {
+    filename "ipxe/ipxe.efi";
+  }
+}
+
+class "UEFI-32-2" {
+  match if substring(option vendor-class-identifier, 0, 20) = "PXEClient:Arch:00002";
+  if exists user-class and option user-class = "iPXE" {
+    filename "ipxe-uefi.cfg";
+  } else {
+    filename "ipxe/ipxe.efi";
+  }
+}
+
+class "UEFI-64-1" {
+  match if substring(option vendor-class-identifier, 0, 20) = "PXEClient:Arch:00007";
+  if exists user-class and option user-class = "iPXE" {
+    filename "ipxe-uefi.cfg";
+  } else {
+    filename "ipxe/ipxe.efi";
+  }
+}
+class "UEFI-64-2" {
+  match if substring(option vendor-class-identifier, 0, 20) = "PXEClient:Arch:00008";
+  if exists user-class and option user-class = "iPXE" {
+    filename "ipxe-uefi.cfg";
+  } else {
+    filename "ipxe/ipxe.efi";
+  }
+}
+
+class "UEFI-64-3" {
+  match if substring(option vendor-class-identifier, 0, 20) = "PXEClient:Arch:00009";
+  if exists user-class and option user-class = "iPXE" {
+    filename "ipxe-uefi.cfg";
+  } else {
+    filename "ipxe/ipxe.efi";
+  }
+}
+
+class "Legacy" {
+  match if substring(option vendor-class-identifier, 0, 20) = "PXEClient:Arch:00000";
+  if exists user-class and option user-class = "iPXE" {
+    filename "ipxe-uefi.cfg";
+  } else {
+    filename "ipxe/ipxe.pxe";
+  }
+}

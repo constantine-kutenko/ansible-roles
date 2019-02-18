@@ -1,0 +1,15 @@
+---
+
+- name: restart_dhcpd_redhat
+  systemd:
+    name: dhcpd
+    state: restarted
+    enabled: true
+    masked: no
+
+- name: restart_dhcpd_debian
+  systemd:
+    name: isc-dhcp-server
+    state: restarted
+    enabled: true
+    masked: no

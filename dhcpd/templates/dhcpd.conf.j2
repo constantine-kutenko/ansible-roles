@@ -1,0 +1,79 @@
+{{ "Created by Ansible" | comment }}
+
+server-name                     {{ ansible_hostname }};
+
+{% if dhcpd_ddns_updates %}
+{% if inventory_hostname == dhcpd_failover_primary_hostname %}
+ddns-updates                    on;
+ddns-update-style               standard;
+update-static-leases            on;
+ignore client-updates;
+{% elif inventory_hostname == dhcpd_failover_secondary_hostname %}
+ddns-updates                    on;
+ddns-update-style               interim;
+update-static-leases            on;
+ignore client-updates;
+{% endif %}
+{% elif not dhcpd_ddns_updates %}
+ddns-update-style               none;
+{% endif %}
+
+{% for item in dhcpd_deny %}
+deny                            {{ item }};
+{% endfor %} 
+{% for item in dhcpd_global_options %}
+option {{ item.name }} {{ item.value }};
+{% endfor %}
+option domain-name              "{{ domain_name }}";
+option domain-name-servers      {{ dhcpd_dns_servers | join(', ') }};
+option time-servers             {{ dhcpd_ntp_servers | join(', ') }};
+ddns-domainname                 "{{ domain_name }}.";
+next-server                     {{ dhcpd_tftp_server | default(ansible_host) }};
+{% if dhcpd_pxe_boot_enabled %}
+option bootfile-name            {{ dhcpd_pxe_boot_file }};
+{% endif %}
+
+default-lease-time              {{ dhcpd_default_lease_time | default(3000) }};
+max-lease-time                  {{ dhcpd_max_lease_time | default(9000) }};
+
+{% if dhcpd_failover_enabled %}
+{% if inventory_hostname == dhcpd_failover_primary_hostname %}
+failover peer "{{ dhcpd_failover_name }}" {
+  primary;
+  address                       {{ ansible_host }};
+  port                          {{ dhcpd_failover_primary_port }};
+{% for host in groups[dhcpd_failover_group_name] %}
+{% if inventory_hostname != host %}
+  peer address                  {{ dhcpd_failover_secondary_addr }};
+{% endif %}
+{% endfor %}
+  peer port                     {{ dhcpd_failover_secondary_port }};
+  max-response-delay            {{ dhcpd_failover_max_response_delay }};
+  max-unacked-updates           {{ dhcpd_failover_max_unacked_updates }};
+  mclt                          {{ dhcpd_failover_mclt }};
+  split                         {{ dhcpd_failover_split }};
+  load balance max seconds      {{ dhcpd_balance_max_seconds }};
+}
+{% endif %}
+{% if inventory_hostname == dhcpd_failover_secondary_hostname %}
+failover peer "{{ dhcpd_failover_name }}" {
+  secondary;
+  address                       {{ ansible_host }};
+  port                          {{ dhcpd_failover_secondary_port }};
+{% for host in groups[dhcpd_failover_group_name] %}
+{% if inventory_hostname != host %}
+  peer address                  {{ dhcpd_failover_primary_addr }};
+{% endif %}
+{% endfor %}
+  peer port                     {{ dhcpd_failover_primary_port }};
+  max-response-delay            {{ dhcpd_failover_max_response_delay }};
+  max-unacked-updates           {{ dhcpd_failover_max_unacked_updates }};
+  load balance max seconds      {{ dhcpd_balance_max_seconds }};
+}
+{% endif %}
+{% endif %}
+
+include "{{ dhcpd_config_dir }}/pxe.conf";
+include "{{ dhcpd_config_dir }}/keys.conf";
+include "{{ dhcpd_config_dir }}/networks.conf";
+include "{{ dhcpd_config_dir }}/static-entries.conf";

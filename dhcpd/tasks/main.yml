@@ -1,0 +1,62 @@
+---
+
+- name: Install packages and dependecies for dhcpd
+  package:
+    name: "{{ item }}"
+    state: latest
+    update_cache: true
+  with_items:
+    - "{% if ansible_os_family | lower() == 'debian' %}isc-dhcp-server{% else %}dhcp{% endif %}"
+  tags: 
+    - dhcp-failover
+
+- name: Ensure a directory for configuration files exists
+  file:
+    path: "{{ dhcpd_config_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  tags:
+    - dhcp-failover
+
+- name: Configuring DHCP defaults on Debian
+  template:
+    src:   "{{ item.src }}.j2"
+    dest:  "{{ item.dest }}/{{ item.src }}"
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ item.group | default('root') }}"
+    mode:  "{{ item.mode | default('0644') }}"
+  with_items:
+    - { src: 'isc-dhcp-server',     dest: '/etc/default', mode: '0644' }
+  when: ansible_os_family | lower() == "debian"
+  tags:
+    - dhcp-failover
+
+- name: Deploy dhcpd configuration files
+  template:
+    src:   "{{ item.src }}.j2"
+    dest:  "{{ item.dest }}/{{ item.src }}"
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ item.group | default('root') }}"
+    mode:  "{{ item.mode | default('0644') }}"
+    force: yes
+  with_items:
+    - { src: 'dhcpd.conf',          dest: '/etc/dhcp',              mode: '0644' }
+    - { src: 'pxe.conf',            dest: '{{ dhcpd_config_dir }}', mode: '0644' }
+    - { src: 'keys.conf',           dest: '{{ dhcpd_config_dir }}', mode: '0600' }
+    - { src: 'networks.conf',       dest: '{{ dhcpd_config_dir }}', mode: '0644' }
+    - { src: 'static-entries.conf', dest: '{{ dhcpd_config_dir }}', mode: '0644' }
+  notify:
+    - "{% if ansible_os_family | lower() == 'debian' %}restart_dhcpd_debian{% else %}restart_dhcpd_redhat{% endif %}"
+  tags:
+    - dhcp-failover
+
+- name: Start, enable and unmask dhcpd service
+  service:
+    name: "{% if ansible_os_family | lower() == 'debian' %}isc-dhcp-server{% else %}dhcpd{% endif %}"
+    state: restarted
+    enabled: yes
+    masked: no
+  tags:
+    - dhcp-failover

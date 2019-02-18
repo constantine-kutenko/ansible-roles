@@ -1,0 +1,91 @@
+---
+
+# Specifies a path to the main configuration file
+dhcpd_main_config: /etc/dhcp/dhcpd.conf
+
+# Specifies a directory for other configuration files
+dhcpd_config_dir: "/etc/dhcp/dhcpd.d"
+
+# Defines if a DHCP server an authoritative one for s subnet
+dhcpd_authoritative: false
+
+dhcpd_default_lease_time: 3000
+
+# Defines max lease time for clients
+dhcpd_max_lease_time: 9000
+
+# Defines if ddns updates will be enabled between dhcp and dns
+dhcpd_ddns_updates: false
+
+dhcpd_deny:
+  - bootp
+  - leasequery
+
+# Defines a domain name to be assigned to dhcp clients (i.g.: example.org)
+domain_name: ""
+
+# Specifies DNS servers to be assigned to DHCP clients (i.g.: 8.8.8.8, 8.8.4.4)
+dhcpd_dns_servers: []
+
+# Specifies NTP servers to be assigned to clients (i.g.: 0.pool.ntp.org, 1.pool.ntp.org)
+dhcpd_ntp_servers: []
+
+# Specifies a TFTP server to boot PXE from
+dhcpd_tftp_server: ""
+
+# Defines if TFTP/PXE boot options will be enabled
+dhcpd_pxe_boot_enabled: false
+
+# Specifies a boot file used for PXE boot
+dhcpd_pxe_boot_file: pxelinux.0
+
+# Specifies global options to be configured
+dhcpd_global_options: []
+  # - name: domain-name
+  #   value: '"{{ domain_name }}"'
+
+# Specifies static entries to be added
+dhcpd_static_entries: []
+  # - host: host_name
+  #   hardware_addr: mac_address
+  #   fixed-address: ip_address
+
+#
+# DHCP failover cluster options
+#
+
+# Defines if dhcp should be configured in failover mode
+dhcpd_failover_enabled: true
+
+# Specifies the name of failover cluster
+dhcpd_failover_name: failover-cluster
+
+dhcpd_failover_primary_port: 647
+dhcpd_failover_secondary_port: 847
+dhcpd_failover_max_response_delay: 60
+dhcpd_failover_max_unacked_updates: 10
+dhcpd_failover_max_seconds: 3
+dhcpd_failover_mclt: 3600
+dhcpd_failover_split: 128
+dhcpd_balance_max_seconds: 3
+
+#
+# Specifies automatically assigned values for failover nodes
+#
+
+# Specifies a name of a group of DHCP servers
+dhcpd_failover_group_name:     "{{ host_group }}"
+
+# dhcpd_failover_address:        "{{ ansible_default_ipv4.address }}"
+
+# Get a hostname for the primary DHCP server
+dhcpd_failover_primary_hostname: "{{ play_hosts[0] }}"
+
+# Get a hostname for the secondary DHCP server
+dhcpd_failover_secondary_hostname: "{{ play_hosts[1] | default('127.0.0.1') }}"
+
+# Specifies an IP address of the primary DHCP server
+dhcpd_failover_primary_addr:   "{{ hostvars[dhcpd_failover_primary_hostname].ansible_host }}"
+
+# Specifies an IP address of the secondary DHCP server
+dhcpd_failover_secondary_addr: "{{ hostvars[dhcpd_failover_secondary_hostname].ansible_host }}"

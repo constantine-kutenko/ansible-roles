@@ -1,0 +1,6 @@
+{{ "Created by Ansible" | comment }}
+
+key {{ dhcpd_key.name }} {
+  algorithm               {{ dhcpd_key.algorithm }};
+  secret                  {{ dhcpd_key.secret }};
+}
