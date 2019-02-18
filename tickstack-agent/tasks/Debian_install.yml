@@ -1,0 +1,37 @@
+---
+
+- name: Install packages and dependecies
+  apt:
+    name={{ item }}
+    state=present
+    update_cache=yes
+  with_items:
+    - mc
+    - curl
+    - vim
+  environment: "{{proxy_env}}"
+  tags: tickstack-agent-ubuntu
+
+- name: Download Telegraf apt key
+  apt_key:
+    url: "https://repos.influxdata.com/influxdb.key"
+    state: present
+  environment: "{{proxy_env}}"
+  tags: tickstack-agent-ubuntu
+
+- name: Add Telegraf repository
+  apt_repository:
+    repo: "deb https://repos.influxdata.com/ubuntu xenial stable"
+    filename: "telegraf"
+    state: present
+  environment: "{{proxy_env}}"
+  tags: tickstack-agent-ubuntu
+
+- name: Install Telegraf package
+  apt:
+    name: telegraf
+    state: present
+    update_cache: "yes"
+    cache_valid_time: 3600
+  notify: telegraf start
+  tags: tickstack-agent-ubuntu

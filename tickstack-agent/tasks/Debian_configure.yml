@@ -1,0 +1,10 @@
+---
+
+- name: Copy configuration file template
+  template:
+    src: telegraf.conf.j2
+    dest: /etc/telegraf/telegraf.conf
+    owner: telegraf
+    group: telegraf
+  notify: telegraf restart
+  tags: tickstack-agent-ubuntu

@@ -1,0 +1,187 @@
+---
+
+# Package option
+telegraf_agent_version: 1.4.0
+
+# Tags configuration
+telegraf_global_tags_enabled: false
+telegraf_global_tags: {}
+telegraf_global_tag_dc: us-east-1
+telegraf_global_tag_rack: 1a
+telegraf_global_tag_user: $USER
+
+
+# Agent configuration
+telegraf_agent_interval: 10s
+telegraf_agent_roundinterval: true
+telegraf_agent_metric_batch_size: 1000
+telegraf_agent_metric_buffer_limit: 10000
+telegraf_agent_collection_jitter: 0s
+telegraf_agent_flush_interval: 10s
+telegraf_agent_flush_jitter: 0s
+telegraf_agent_precision: ""
+telegraf_agent_debug: false
+telegraf_agent_quiet: false
+telegraf_agent_logfile: /var/log/telegraf/telegraf.log
+telegraf_agent_hostname: ""
+telegraf_agent_omit_hostname: false
+
+# Output plugins
+telegraf_output_influxdb_enabled: true
+telegraf_output_amon_enabled: false
+telegraf_output_amqp_enabled: false
+telegraf_output_cloudwatch_enabled: false
+telegraf_output_cratedb_enabled: false
+telegraf_output_datadog_enabled: false
+telegraf_output_discard_enabled: false
+telegraf_output_elasticsearch_enabled: false
+telegraf_output_file_enabled: false
+telegraf_output_graphite_enabled: false
+telegraf_output_graylog_enabled: false
+telegraf_output_instrumental_enabled: false
+telegraf_output_kafka_enabled: false
+telegraf_output_kinesis_enabled: false
+telegraf_output_librato_enabled: false
+telegraf_output_mqtt_enabled: false
+telegraf_output_nats_enabled: false
+telegraf_output_nsq_enabled: false
+telegraf_output_opentsdb_enabled: false
+telegraf_output_prometheus_client_enabled: false
+telegraf_output_riemann_enabled: false
+telegraf_output_riemann_legacy_enabled: false
+telegraf_output_socket_writer_enabled: false
+
+# Processor plugins
+telegraf_processors_printer_enabled: false
+
+# Aggregator plugins
+telegraf_aggregators_histogram_enabled: false
+telegraf_aggregators_minmax_enabled: false
+
+## Input plugins
+
+# System input plugins
+telegraf_input_cpu_enabled: true
+telegraf_input_cpu_percpu: true
+telegraf_input_cpu_totalcpu: true
+telegraf_input_cpu_fielddrop:
+  - time_*
+telegraf_input_disk_enabled: true
+telegraf_input_disk_mount_points: []
+telegraf_input_disk_ignore_fs:
+  - tmpfs
+  - devtmpfs
+telegraf_input_diskio_enabled: true
+telegraf_input_diskio_devices: []
+telegraf_input_diskio_skip_serial_number: false
+telegraf_input_kernel_enabled: true
+telegraf_input_mem_enabled: true
+telegraf_input_netstat_enabled: true
+telegraf_input_processes_enabled: true
+telegraf_input_swap_enabled: true
+telegraf_input_system_enabled: true
+telegraf_input_net_enabled: true
+
+# Additional input plugins
+telegraf_input_aerospike_enabled: false
+telegraf_input_apache_enabled: false
+telegraf_input_bcache_enabled: false
+telegraf_input_cassandra_enabled: false
+telegraf_input_ceph_enabled: false
+telegraf_input_cgroup_enabled: false
+telegraf_input_chrony_enabled: false
+telegraf_input_cloudwatch_enabled: false
+telegraf_input_conntrack_enabled: false
+telegraf_input_consul_enabled: false
+telegraf_input_couchbase_enabled: false
+telegraf_input_couchdb_enabled: false
+telegraf_input_disque_enabled: false
+telegraf_input_dmcache_enabled: false
+telegraf_input_dns_query_enabled: false
+telegraf_input_docker_enabled: false
+telegraf_input_dovecot_enabled: false
+telegraf_input_elasticsearch_enabled: false
+telegraf_input_exec_enabled: false
+telegraf_input_fail2ban_enabled: false
+telegraf_input_filestat_enabled: false
+telegraf_input_fluentd_enabled: false
+telegraf_input_graylog_enabled: false
+telegraf_input_haproxy_enabled: false
+telegraf_input_hddtemp_enabled: false
+telegraf_input_http_response_enabled: false
+telegraf_input_httpjson_enabled: false
+telegraf_input_influxdb_enabled: false
+telegraf_input_internal_enabled: false
+telegraf_input_interrupts_enabled: false
+telegraf_input_ipmi_sensor_enabled: false
+telegraf_input_iptables_enabled: false
+telegraf_input_jolokia_enabled: false
+telegraf_input_jolokia2_agent_enabled: false
+telegraf_input_jolokia2_proxy_enabled: false
+telegraf_input_kapacitor_enabled: false
+telegraf_input_kernel_vmstat_enabled: false
+telegraf_input_kubernetes_enabled: false
+telegraf_input_leofs_enabled: false
+telegraf_input_linux_sysctl_fs_enabled: false
+telegraf_input_lustre2_enabled: false
+telegraf_input_mailchimp_enabled: false
+telegraf_input_memcached_enabled: false
+telegraf_input_mesos_enabled: false
+telegraf_input_minecraft_enabled: false
+telegraf_input_mongodb_enabled: false
+telegraf_input_mysql_enabled: false
+telegraf_input_net_response_enabled: false
+telegraf_input_nginx_enabled: false
+telegraf_input_nginx_plus_enabled: false
+telegraf_input_nsq_enabled: false
+telegraf_input_nstat_enabled: false
+telegraf_input_nstat_proc_net_netstat: /bin/netstat
+telegraf_input_nstat_dump_zeros: true
+telegraf_input_ntpq_enabled: false
+telegraf_input_openldap_enabled: false
+telegraf_input_opensmtpd_enabled: false
+telegraf_input_passenger_enabled: false
+telegraf_input_phpfpm_enabled: false
+telegraf_input_ping_enabled: false
+telegraf_input_postgresql_enabled: false
+telegraf_input_postgresql_extensible_enabled: false
+telegraf_input_powerdns_enabled: false
+telegraf_input_procstat_enabled: false
+telegraf_input_prometheus_enabled: false
+telegraf_input_puppetagent_enabled: false
+telegraf_input_rabbitmq_enabled: false
+telegraf_input_raindrops_enabled: false
+telegraf_input_redis_enabled: false
+telegraf_input_rethinkdb_enabled: false
+telegraf_input_riak_enabled: false
+telegraf_input_salesforce_enabled: false
+telegraf_input_sensors_enabled: false
+telegraf_input_snmp_enabled: false
+telegraf_input_snmp_legacy_enabled: false
+telegraf_input_solr_enabled: false
+telegraf_input_sqlserver_enabled: false
+telegraf_input_sysstat_enabled: false
+telegraf_input_tomcat_enabled: false
+telegraf_input_trig_enabled: false
+telegraf_input_twemproxy_enabled: false
+telegraf_input_varnish_enabled: false
+telegraf_input_zfs_enabled: false
+telegraf_input_zookeeper_enabled: false
+
+# Service input plugins
+telegraf_input_amqp_consumer_enabled: false
+telegraf_input_http_listener_enabled: false
+telegraf_input_kafka_consumer_enabled: false
+telegraf_input_kafka_consumer_legacy_enabled: false
+telegraf_input_logparser_enabled: false
+telegraf_input_mqtt_consumer_enabled: false
+telegraf_input_nats_consumer_enabled: false
+telegraf_input_nsq_consumer_enabled: false
+telegraf_input_socket_listener_enabled: false
+telegraf_input_statsd_enabled: false
+telegraf_input_tail_enabled: false
+telegraf_input_tcp_listener_enabled: false
+telegraf_input_udp_listener_enabled: false
+telegraf_input_unbound_enabled: false
+telegraf_input_webhooks_enabled: false
+telegraf_input_zipkin_enabled: false

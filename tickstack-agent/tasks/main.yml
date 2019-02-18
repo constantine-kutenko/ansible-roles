@@ -1,0 +1,11 @@
+---
+
+# Install Telegraf
+- name: Include the playbook that handles installation of Telegraf service
+  include: "{{ ansible_os_family }}_install.yml"
+  tags: tickstack-agent
+
+# Configure Telegraf
+- name: Include the playbook that handles configuration of Telegraf service
+  include: "{{ ansible_os_family }}_configure.yml"
+  tags: tickstack-agent

@@ -1,0 +1,16 @@
+---
+
+- name: telegraf restart
+  service:
+    name: telegraf
+    state: restarted
+
+- name: telegraf stop
+  service:
+    name: telegraf
+    state: stopped
+
+- name: telegraf start
+  service:
+    name: telegraf
+    state: started
